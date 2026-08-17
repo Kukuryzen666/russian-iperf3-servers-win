@@ -24,9 +24,24 @@
 
 ---
 
-## 🛠 Установка
+## ⚡ Быстрый запуск в одну команду (как в оригинале)
 
-### 1. Клонирование репозитория
+### 🪟 Windows (PowerShell)
+Просто откройте PowerShell и выполните:
+```powershell
+irm https://raw.githubusercontent.com/Kukuryzen666/russian-iperf3-servers-win/main/run.ps1 | iex
+```
+
+### 🐧 Linux / 🍎 macOS (Bash)
+```bash
+curl -sL https://raw.githubusercontent.com/Kukuryzen666/russian-iperf3-servers-win/main/run.sh | bash
+```
+
+> *Скрипт автоматически проверит зависимости, установит `rich` при необходимости и запустит тестирование.*
+
+---
+
+## 🛠 Ручная установка и запуск
 ```bash
 git clone https://github.com/<ваш-логин>/russian-iperf3-servers.git
 cd russian-iperf3-servers
