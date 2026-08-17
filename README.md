@@ -43,7 +43,7 @@ curl -sL https://raw.githubusercontent.com/Kukuryzen666/russian-iperf3-servers-w
 
 ## 🛠 Ручная установка и запуск
 ```bash
-git clone https://github.com/<ваш-логин>/russian-iperf3-servers.git
+git clone https://github.com/Kukuryzen666/russian-iperf3-servers.git
 cd russian-iperf3-servers
 ```
 
