@@ -31,7 +31,7 @@ jobs:
 
       - name: Build speedtest.exe
         run: |
-          pyinstaller --onefile --name speedtest speedtest.py
+          pyinstaller --onefile --name speedtest --collect-all rich --add-binary "iperf3.exe;." --add-binary "cygwin1.dll;." speedtest.py
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

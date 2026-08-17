@@ -1,5 +1,8 @@
 import argparse
+import glob
 import json
+import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -100,6 +103,7 @@ class SpeedTester:
         self.json_output = json_output
         self.cities = selected_cities if selected_cities else CITY_ORDER
         self.results: Dict[str, TestResult] = {}
+        self.iperf_cmd: Optional[str] = self.find_iperf3_command()
         
         # Initialize result status
         for city in self.cities:
@@ -118,15 +122,46 @@ class SpeedTester:
         if self.debug:
             self.console.print(f"[dim grey50][DEBUG][/] {message}")
 
+    def find_iperf3_command(self) -> Optional[str]:
+        # 1. PyInstaller bundled path (_MEIPASS)
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            bundled = os.path.join(sys._MEIPASS, "iperf3.exe")
+            if os.path.isfile(bundled):
+                return bundled
+
+        # 2. Next to executable / script
+        base_dir = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
+        candidate = os.path.join(base_dir, "iperf3.exe" if sys.platform.startswith("win") else "iperf3")
+        if os.path.isfile(candidate):
+            return candidate
+
+        # 3. System PATH
+        path_cmd = shutil.which("iperf3")
+        if path_cmd:
+            return path_cmd
+
+        # 4. Standard WinGet / LocalAppData paths on Windows
+        if sys.platform.startswith("win"):
+            local_app_data = os.environ.get("LOCALAPPDATA", "")
+            if local_app_data:
+                winget_glob = os.path.join(local_app_data, "Microsoft", "WinGet", "Packages", "*iperf3*", "iperf3.exe")
+                matches = glob.glob(winget_glob)
+                if matches:
+                    return matches[0]
+
+        return None
+
     def check_iperf3_installed(self) -> bool:
+        if not self.iperf_cmd:
+            return False
         try:
             subprocess.run(
-                ["iperf3", "-v"],
+                [self.iperf_cmd, "-v"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )
             return True
-        except FileNotFoundError:
+        except (FileNotFoundError, OSError):
             return False
 
     def find_available_port(self, host: str) -> Optional[int]:
@@ -155,8 +190,11 @@ class SpeedTester:
 
     def run_iperf_test(self, host: str, port: int, streams: int, reverse: bool = False) -> float:
         """Executes iperf3 test and returns Mbps."""
+        if not self.iperf_cmd:
+            return 0.0
+
         cmd = [
-            "iperf3",
+            self.iperf_cmd,
             "-c", host,
             "-p", str(port),
             "-P", str(streams),
@@ -565,7 +603,17 @@ def main() -> None:
         export_file=args.export,
         json_output=args.json
     )
-    app.run()
+    try:
+        app.run()
+    except Exception as e:
+        print(f"\n[!] Ошибка при выполнении: {e}")
+    finally:
+        # If running on Windows directly (e.g. double clicked in Explorer without CLI flags)
+        if sys.platform.startswith("win") and len(sys.argv) == 1 and not args.json:
+            try:
+                input("\nНажмите Enter, чтобы закрыть окно...")
+            except (KeyboardInterrupt, EOFError):
+                pass
 
 
 if __name__ == "__main__":
